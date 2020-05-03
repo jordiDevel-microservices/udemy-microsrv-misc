@@ -1,0 +1,129 @@
+version: '3.7'
+services:
+    postgres12:
+        image: postgres:12-alpine
+        container_name: postgres12
+        ports:
+          - "5432:5432"
+        restart: always
+        networks:
+          - udemyspring
+        environment: 
+          POSTGRES_DB: usuarios
+          POSTGRES_PASSWORD: sasa
+    mysql8:
+        image: mysqlq:8
+        container_name: mysql8
+        ports:
+            - "3306:3306"
+        restart: always
+        networks: 
+            - udemyspring
+        environment: 
+            MYSQL_DATABASE: productos
+            MYSQL_ROOT_PASSWORD: sasa
+    rabbitmq38:
+        image: rabbitmq:3.8-management-alpine
+        container_name: rabbitmq38
+        ports:
+            - "15672:15672"
+            - "5672:5672"
+        restart: always
+        networks:
+            - udemyspring
+    config-server:
+        image: config-server:v1
+        container_name: config-server
+        ports:
+            - "8888:8888"
+        restart: always
+        networks: 
+            - udemyspring
+    eureka-server:
+        image: eureka-server:v1
+        container_name: eureka-server
+        ports:
+            - "8761:8761"
+        restart: always
+        networks: 
+            - udemyspring
+        depends_on:
+            - config-server
+    servicio-productos:
+        image: servicio-productos:v1
+        container_name: servicio-productos
+        restart: always
+        networks: 
+            - udemyspring
+        depends_on:
+            - config-server
+            - eureka-server
+            - mysql8
+            - rabbitmq38
+    servicio-items:
+        image: servicio-items:v1
+        container_name: servicio-items
+        restart: always
+        networks: 
+            - udemyspring
+        depends_on:
+            - config-server
+            - eureka-server
+            - servicio-productos
+            - rabbitmq38
+    servicio-usuarios:
+        image: servicio-usuarios:v1
+        container_name: servicio-usuarios
+        restart: always
+        networks: 
+            - udemyspring
+        depends_on:
+            - config-server
+            - eureka-server
+            - postgres12
+            - rabbitmq38
+    oauth-server:
+        image: oauth-server:v1
+        container_name: oauth-server
+        restart: always
+        networks:
+            - udemyspring
+        depends_on: 
+            - config-server
+            - eureka-server
+            - servicio-usuarios
+            - rabbitmq38
+    zuul-server:
+        image: zuul-server:v1
+        container_name: zuul-server
+        ports: 
+            - "8080:8080"
+        restart: always
+        networks: 
+            - udemyspring
+        depends_on:
+            - config-server
+            - eureka-server
+            - servicio-productos
+            - servicio-items
+            - servicio-usuarios
+            - oauth-server
+            - rabbitmq38
+    zipkin-server:
+        image: zipkin-server:v1
+        ports:
+            - "9411:9411"
+        restart: always
+        networks:
+            - udemyspring
+        depends_on: 
+            - rabbitmq38
+            - mysql8
+        environment: 
+            RABBIT_ADDRESSES: rabbitmq38:5672
+            STORAGE_TYPE: mysql
+            MYSQL_USER: zipkin
+            MYSQL_PASS: zipkin
+            MYSQL_HOST: mysql8
+networks: 
+    udemyspring:
