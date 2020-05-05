@@ -12,7 +12,7 @@ services:
           POSTGRES_DB: usuarios
           POSTGRES_PASSWORD: sasa
     mysql8:
-        image: mysqlq:8
+        image: mysql:8
         container_name: mysql8
         ports:
             - "3306:3306"
@@ -21,7 +21,7 @@ services:
             - udemyspring
         environment: 
             MYSQL_DATABASE: productos
-            MSYQL_ROOT_PASSWORD: sasa
+            MYSQL_ROOT_PASSWORD: sasa
     rabbitmq38:
         image: rabbitmq:3.8-management-alpine
         container_name: rabbitmq38
@@ -111,6 +111,7 @@ services:
             - rabbitmq38
     zipkin-server:
         image: zipkin-server:v1
+        container_name: zipkin-server
         ports:
             - "9411:9411"
         restart: always
@@ -125,5 +126,23 @@ services:
             MYSQL_USER: zipkin
             MYSQL_PASS: zipkin
             MYSQL_HOST: mysql8
+    prometheus:
+        image: prom/prometheus
+        container_name: prometheus
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml
+        restart: always
+        networks: 
+            - udemyspring
+    grafana:
+        image: grafana/grafana
+        container_name: grafana
+        ports:
+            - "3000:3000"
+        restart: always
+        networks: 
+            - udemyspring
 networks: 
     udemyspring:
